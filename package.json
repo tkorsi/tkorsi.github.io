@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://tkorsi.github.io/my-cv",
+  "homepage": "https://tkorsi.github.io/tkorsi.github.io",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
