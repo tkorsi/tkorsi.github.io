@@ -1,5 +1,4 @@
-import React from 'react';
-import { Mail, Phone, MapPin, Globe, Linkedin, User, Briefcase, BookOpen, Terminal, Send, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Globe, User, Briefcase, BookOpen, Terminal, Send, MessageCircle } from 'lucide-react';
 
 const App = () => {
   const personalInfo = {
