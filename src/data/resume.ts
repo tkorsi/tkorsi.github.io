@@ -6,6 +6,7 @@ export type PersonalInfo = {
   location: string
   telegram: string
   whatsapp: string
+  github: string
   summary: string
 }
 
@@ -47,6 +48,7 @@ export const personalInfo = {
   location: 'Kyiv, Ukraine',
   telegram: 'yehorshapanov',
   whatsapp: '380991380940',
+  github: 'tkorsi',
   summary: "I build modern, high-load solutions that solve critical business challenges. With 10+ years of engineering experience, I leverage Go, Kubernetes, and AWS to architect systems managing massive scale (200+ microservices). Expert in guiding distributed teams through the full software development lifecycle.",
 } satisfies PersonalInfo
 

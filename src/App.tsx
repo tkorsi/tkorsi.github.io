@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Briefcase,
+  Github,
   Globe,
   Mail,
   MapPin,
@@ -39,6 +40,14 @@ export default function App() {
                 className="flex items-center hover:text-white transition-colors"
               >
                 <Phone className="w-4 h-4 mr-2" /> {personalInfo.phone}
+              </a>
+              <a
+                href={`https://github.com/${personalInfo.github}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center hover:text-white transition-colors"
+              >
+                <Github className="w-4 h-4 mr-2" /> {personalInfo.github}
               </a>
               <span className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2" /> {personalInfo.location}
