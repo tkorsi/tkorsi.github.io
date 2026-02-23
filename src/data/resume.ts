@@ -99,6 +99,18 @@ export const skills = [
 
 export const experience = [
   {
+    company: 'Last Mile',
+    role: 'Founding CTO & Lead Architect',
+    period: 'April 2023 - February 2026',
+    description:
+      'Co-founded the startup and defined the technical roadmap, driving product strategy from concept to an autonomous flight prototype.',
+    achievements: [
+      'Designed a "synthetic flying" controller using GANs to emulate human-like navigation in GPS-denied environments.',
+      'Built a custom data pipeline mapping image-to-telemetry data, enabling cross-map generalization.',
+      'Led the transition from simulation to real hardware, integrating low-latency edge compute.',
+    ],
+  },
+  {
     company: 'EvoPlay',
     role: 'Golang Team Lead',
     period: 'February 2020 - Present',
@@ -189,7 +201,7 @@ export const education = [
   {
     degree: 'Yandex Data School',
     school: 'Computer Science',
-    year: '2014 (1 Semester)',
+    year: '2014 - 2016',
   },
 ] satisfies EducationItem[]
 

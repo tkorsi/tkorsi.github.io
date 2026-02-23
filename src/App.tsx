@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   BookOpen,
   Briefcase,
@@ -9,13 +10,91 @@ import {
   Phone,
   Send,
   Terminal,
+  Trophy,
   User,
 } from 'lucide-react'
 import { education, experience, highlights, languages, personalInfo, skills } from './data/resume'
 
 const cvPdfUrl = `${import.meta.env.BASE_URL}Yehor_Shapanov_Tech_Lead_CV.pdf`
+const codeforcesHandle = 'yshapanov'
+
+type CodeforcesState = {
+  loading: boolean
+  rating?: number
+  rank?: string
+  error?: string
+}
+
+const codeforcesRankMap: Record<string, string> = {
+  'новичок': 'Newbie',
+  'ученик': 'Pupil',
+  'специалист': 'Specialist',
+  'эксперт': 'Expert',
+  'кандидат в мастера': 'Candidate Master',
+  'мастер': 'Master',
+  'международный мастер': 'International Master',
+  'гроссмейстер': 'Grandmaster',
+  'международный гроссмейстер': 'International Grandmaster',
+  'легендарный гроссмейстер': 'Legendary Grandmaster',
+}
+
+const formatRank = (rank: string) => {
+  const normalized = rank.trim().toLowerCase()
+  const mapped = codeforcesRankMap[normalized]
+  if (mapped) {
+    return mapped
+  }
+
+  return normalized
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
 
 export default function App() {
+  const [codeforces, setCodeforces] = useState<CodeforcesState>({ loading: true })
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadCodeforces = async () => {
+      try {
+        const response = await fetch(
+          `https://codeforces.com/api/user.info?handles=${codeforcesHandle}`,
+          { signal: controller.signal }
+        )
+        if (!response.ok) {
+          throw new Error('Failed to load Codeforces data.')
+        }
+
+        const data = (await response.json()) as {
+          status: string
+          result?: Array<{ rating?: number; rank?: string }>
+        }
+
+        if (data.status !== 'OK' || !data.result?.length) {
+          throw new Error('Invalid Codeforces response.')
+        }
+
+        const [user] = data.result
+        setCodeforces({
+          loading: false,
+          rating: user.rating,
+          rank: user.rank,
+        })
+      } catch (error) {
+        if ((error as { name?: string }).name === 'AbortError') {
+          return
+        }
+        setCodeforces({ loading: false, error: 'Unable to load Codeforces rating.' })
+      }
+    }
+
+    loadCodeforces()
+
+    return () => controller.abort()
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       {/* Header / Hero Section */}
@@ -138,6 +217,46 @@ export default function App() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Codeforces */}
+            <div className="bg-white p-6 rounded-xl shadow-md">
+              <h3 className="font-bold text-xl mb-6 flex items-center text-slate-900 border-b pb-3">
+                <Trophy className="w-6 h-6 mr-2 text-blue-600" /> Codeforces
+              </h3>
+              <div className="space-y-3 text-sm">
+                <a
+                  href={`https://codeforces.com/profile/${codeforcesHandle}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                >
+                  {codeforcesHandle}
+                </a>
+
+                {codeforces.loading && <p className="text-slate-500">Loading rating...</p>}
+
+                {!codeforces.loading && codeforces.error && (
+                  <p className="text-rose-600">{codeforces.error}</p>
+                )}
+
+                {!codeforces.loading && !codeforces.error && (
+                  <div className="space-y-1">
+                    <p className="text-slate-700">
+                      Rating:{' '}
+                      <span className="font-semibold text-slate-900">
+                        {codeforces.rating ?? 'Unrated'}
+                      </span>
+                    </p>
+                    <p className="text-slate-700">
+                      Level:{' '}
+                      <span className="font-semibold text-slate-900">
+                        {codeforces.rank ? formatRank(codeforces.rank) : 'Unranked'}
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
