@@ -112,7 +112,7 @@ export const experience = [
   },
   {
     company: 'EvoPlay',
-    role: 'Golang Team Lead',
+    role: 'Node Team Lead',
     period: 'January 2020 - April 2022',
     description:
       'Spearheaded the development and integration of high-load, performance-optimized solutions focusing on blockchain technology (TON).',
@@ -121,7 +121,7 @@ export const experience = [
       'Managed a large GCE cluster with over 200 microservices.',
       'Implemented robust, scalable systems using C++ and Go.',
       'Developed TCP/IP-based networking solutions.',
-      'Stack: Golang, Kubernetes, Helm, Prometheus, RabbitMQ, Jaeger, C++.',
+      'Stack: Node.js, Kubernetes, Helm, Prometheus, RabbitMQ, Jaeger, C++.',
     ],
   },
   {
