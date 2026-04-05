@@ -113,7 +113,7 @@ export const experience = [
   {
     company: 'EvoPlay',
     role: 'Golang Team Lead',
-    period: 'February 2020 - Present',
+    period: 'January 2020 - April 2022',
     description:
       'Spearheaded the development and integration of high-load, performance-optimized solutions focusing on blockchain technology (TON).',
     achievements: [
