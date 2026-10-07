@@ -1,215 +1,132 @@
-import { useEffect, useState } from 'react'
 import {
+  Award,
   BookOpen,
   Briefcase,
+  FolderOpen,
   Github,
   Globe,
+  Linkedin,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
   Send,
+  Star,
   Terminal,
-  Trophy,
   User,
 } from 'lucide-react'
-import { education, experience, highlights, languages, personalInfo, skills } from './data/resume'
+import {
+  certifications,
+  education,
+  experience,
+  featured,
+  languages,
+  personalInfo,
+  projects,
+  skills,
+} from './data/resume'
 
 const cvPdfUrl = `${import.meta.env.BASE_URL}Yehor_Shapanov_Tech_Lead_CV.pdf`
-const codeforcesHandle = 'yshapanov'
-
-type CodeforcesState = {
-  loading: boolean
-  rating?: number
-  rank?: string
-  error?: string
-}
-
-const codeforcesRankMap: Record<string, string> = {
-  'новичок': 'Newbie',
-  'ученик': 'Pupil',
-  'специалист': 'Specialist',
-  'эксперт': 'Expert',
-  'кандидат в мастера': 'Candidate Master',
-  'мастер': 'Master',
-  'международный мастер': 'International Master',
-  'гроссмейстер': 'Grandmaster',
-  'международный гроссмейстер': 'International Grandmaster',
-  'легендарный гроссмейстер': 'Legendary Grandmaster',
-}
-
-const formatRank = (rank: string) => {
-  const normalized = rank.trim().toLowerCase()
-  const mapped = codeforcesRankMap[normalized]
-  if (mapped) {
-    return mapped
-  }
-
-  return normalized
-    .split(' ')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
-}
 
 export default function App() {
-  const [codeforces, setCodeforces] = useState<CodeforcesState>({ loading: true })
-
-  useEffect(() => {
-    const controller = new AbortController()
-
-    const loadCodeforces = async () => {
-      try {
-        const response = await fetch(
-          `https://codeforces.com/api/user.info?handles=${codeforcesHandle}`,
-          { signal: controller.signal }
-        )
-        if (!response.ok) {
-          throw new Error('Failed to load Codeforces data.')
-        }
-
-        const data = (await response.json()) as {
-          status: string
-          result?: Array<{ rating?: number; rank?: string }>
-        }
-
-        if (data.status !== 'OK' || !data.result?.length) {
-          throw new Error('Invalid Codeforces response.')
-        }
-
-        const [user] = data.result
-        setCodeforces({
-          loading: false,
-          rating: user.rating,
-          rank: user.rank,
-        })
-      } catch (error) {
-        if ((error as { name?: string }).name === 'AbortError') {
-          return
-        }
-        setCodeforces({ loading: false, error: 'Unable to load Codeforces rating.' })
-      }
-    }
-
-    loadCodeforces()
-
-    return () => controller.abort()
-  }, [])
-
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      {/* Header / Hero Section */}
-      <header className="bg-slate-900 text-white pb-12 pt-16 px-6 lg:px-24 shadow-xl">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-          <div className="md:col-span-2 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{personalInfo.name}</h1>
-            <p className="text-xl md:text-2xl text-blue-400 font-medium">{personalInfo.role}</p>
-            <p className="text-slate-300 leading-relaxed max-w-2xl text-lg">
-              {personalInfo.summary}
-            </p>
-
-            <div className="flex flex-wrap gap-4 pt-4 text-sm text-slate-300">
-              <a
-                href={`mailto:${personalInfo.email}`}
-                className="flex items-center hover:text-white transition-colors"
-              >
-                <Mail className="w-4 h-4 mr-2" /> {personalInfo.email}
-              </a>
-              <a
-                href={`tel:${personalInfo.phone}`}
-                className="flex items-center hover:text-white transition-colors"
-              >
-                <Phone className="w-4 h-4 mr-2" /> {personalInfo.phone}
-              </a>
-              <a
-                href={`https://github.com/${personalInfo.github}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center hover:text-white transition-colors"
-              >
-                <Github className="w-4 h-4 mr-2" /> {personalInfo.github}
-              </a>
-              <span className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2" /> {personalInfo.location}
+      <header className="bg-slate-900 px-6 pb-12 pt-16 text-white shadow-xl lg:px-24">
+        <div className="mx-auto max-w-6xl space-y-5">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{personalInfo.name}</h1>
+              <p className="text-xl font-medium text-blue-400 md:text-2xl">{personalInfo.role}</p>
+              <span className="flex items-center text-slate-300">
+                <MapPin className="mr-2 h-4 w-4" /> {personalInfo.location}
               </span>
             </div>
+            <a
+              href={personalInfo.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-100 transition-colors hover:border-blue-400 hover:text-white"
+            >
+              <Linkedin className="mr-2 h-4 w-4" /> LinkedIn profile
+            </a>
           </div>
 
-          {/* Quick Stats / Highlights Cards */}
-          <div className="grid grid-cols-2 gap-4">
-            {highlights.map((highlight) => (
-              <div
-                key={highlight.label}
-                className={`bg-slate-800 p-4 rounded-lg border-l-4 ${highlight.borderColorClassName}`}
-              >
-                <div className="text-3xl font-bold text-white">{highlight.value}</div>
-                <div className="text-xs text-slate-400 uppercase tracking-wider mt-1">
-                  {highlight.label}
-                </div>
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-700 pt-5 text-sm text-slate-300">
+            <a href={`mailto:${personalInfo.email}`} className="flex items-center hover:text-white">
+              <Mail className="mr-2 h-4 w-4" /> {personalInfo.email}
+            </a>
+            <a href={`tel:${personalInfo.phone}`} className="flex items-center hover:text-white">
+              <Phone className="mr-2 h-4 w-4" /> {personalInfo.phone}
+            </a>
+            <a
+              href={`https://github.com/${personalInfo.github}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center hover:text-white"
+            >
+              <Github className="mr-2 h-4 w-4" /> {personalInfo.github}
+            </a>
           </div>
         </div>
       </header>
 
-      {/* Main Content Layout */}
-      <main className="max-w-6xl mx-auto px-6 lg:px-12 -mt-8 mb-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Sidebar (Skills & Info) */}
+      <main className="relative z-10 mx-auto mb-16 mt-8 max-w-6xl px-6 lg:px-12">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <aside className="space-y-6">
-            {/* Contact CTA */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-lg flex items-center">
-                  <User className="w-5 h-5 mr-2 text-blue-600" /> Contact
-                </h3>
-              </div>
+            <section className="rounded-xl bg-white p-6 shadow-md">
+              <h2 className="mb-4 flex items-center text-lg font-bold">
+                <User className="mr-2 h-5 w-5 text-blue-600" /> Contact
+              </h2>
               <div className="space-y-3 text-sm">
                 <a
                   href={cvPdfUrl}
                   download
-                  className="flex items-center justify-center w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors font-semibold shadow-sm"
+                  className="flex w-full items-center justify-center rounded-lg bg-slate-900 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                 >
                   Download CV (PDF)
+                </a>
+                <a
+                  href={personalInfo.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center rounded-lg bg-blue-700 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-blue-800"
+                >
+                  <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
                 </a>
                 <a
                   href={`https://t.me/${personalInfo.telegram}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-semibold shadow-sm"
+                  className="flex w-full items-center justify-center rounded-lg bg-blue-500 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-blue-600"
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Chat on Telegram
+                  <Send className="mr-2 h-4 w-4" /> Chat on Telegram
                 </a>
-
                 <a
                   href={`https://wa.me/${personalInfo.whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center w-full py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-semibold shadow-sm"
+                  className="flex w-full items-center justify-center rounded-lg bg-green-600 py-2.5 font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Chat on WhatsApp
+                  <MessageCircle className="mr-2 h-4 w-4" /> Chat on WhatsApp
                 </a>
               </div>
-            </div>
+            </section>
 
-            {/* Skills Section */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="font-bold text-xl mb-6 flex items-center text-slate-900 border-b pb-3">
-                <Terminal className="w-6 h-6 mr-2 text-blue-600" /> Technical Skills
-              </h3>
-
+            <section className="rounded-xl bg-white p-6 shadow-md">
+              <h2 className="mb-6 flex items-center border-b pb-3 text-xl font-bold text-slate-900">
+                <Terminal className="mr-2 h-6 w-6 text-blue-600" /> Skills
+              </h2>
               <div className="space-y-6">
-                {skills.map((skillGroup) => (
-                  <div key={skillGroup.category}>
-                    <h4 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">
-                      {skillGroup.category}
-                    </h4>
+                {skills.map((group) => (
+                  <div key={group.category}>
+                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
+                      {group.category}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
-                      {skillGroup.items.map((skill) => (
+                      {group.items.map((skill) => (
                         <span
-                          key={`${skillGroup.category}:${skill}`}
-                          className="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-medium rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors cursor-default"
+                          key={`${group.category}:${skill}`}
+                          className="cursor-default rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700 transition-colors hover:bg-blue-50 hover:text-blue-700"
                         >
                           {skill}
                         </span>
@@ -218,132 +135,134 @@ export default function App() {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Codeforces */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="font-bold text-xl mb-6 flex items-center text-slate-900 border-b pb-3">
-                <Trophy className="w-6 h-6 mr-2 text-blue-600" /> Codeforces
-              </h3>
-              <div className="space-y-3 text-sm">
-                <a
-                  href={`https://codeforces.com/profile/${codeforcesHandle}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 font-semibold hover:text-blue-700 transition-colors"
-                >
-                  {codeforcesHandle}
-                </a>
-
-                {codeforces.loading && <p className="text-slate-500">Loading rating...</p>}
-
-                {!codeforces.loading && codeforces.error && (
-                  <p className="text-rose-600">{codeforces.error}</p>
-                )}
-
-                {!codeforces.loading && !codeforces.error && (
-                  <div className="space-y-1">
-                    <p className="text-slate-700">
-                      Rating:{' '}
-                      <span className="font-semibold text-slate-900">
-                        {codeforces.rating ?? 'Unrated'}
-                      </span>
-                    </p>
-                    <p className="text-slate-700">
-                      Level:{' '}
-                      <span className="font-semibold text-slate-900">
-                        {codeforces.rank ? formatRank(codeforces.rank) : 'Unranked'}
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Education */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="font-bold text-xl mb-6 flex items-center text-slate-900 border-b pb-3">
-                <BookOpen className="w-6 h-6 mr-2 text-blue-600" /> Education
-              </h3>
-              <div className="space-y-4">
-                {education.map((edu) => (
-                  <div key={`${edu.school}:${edu.degree}:${edu.year}`}>
-                    <h4 className="font-bold text-slate-800">{edu.school}</h4>
-                    <p className="text-blue-600 text-sm">{edu.degree}</p>
-                    <p className="text-slate-500 text-xs mt-1">{edu.year}</p>
+            <section className="rounded-xl bg-white p-6 shadow-md">
+              <h2 className="mb-6 flex items-center border-b pb-3 text-xl font-bold text-slate-900">
+                <BookOpen className="mr-2 h-6 w-6 text-blue-600" /> Education
+              </h2>
+              <div className="space-y-5">
+                {education.map((item) => (
+                  <div key={`${item.school}:${item.degree}`}>
+                    <h3 className="font-bold text-slate-800">{item.school}</h3>
+                    <p className="text-sm text-blue-600">{item.degree}</p>
+                    {item.year && <p className="mt-1 text-xs text-slate-500">{item.year}</p>}
+                    {item.details && <p className="mt-1 text-xs text-slate-500">{item.details}</p>}
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Languages */}
-            <div className="bg-white p-6 rounded-xl shadow-md">
-              <h3 className="font-bold text-xl mb-6 flex items-center text-slate-900 border-b pb-3">
-                <Globe className="w-6 h-6 mr-2 text-blue-600" /> Languages
-              </h3>
+            <section className="rounded-xl bg-white p-6 shadow-md">
+              <h2 className="mb-4 flex items-center border-b pb-3 text-xl font-bold text-slate-900">
+                <Globe className="mr-2 h-6 w-6 text-blue-600" /> Languages
+              </h2>
               <ul className="space-y-2 text-sm">
                 {languages.map((language) => (
                   <li key={language.language} className="flex justify-between">
                     <span>{language.language}</span>
-                    <span className="text-slate-500">{language.proficiency}</span>
+                    {language.proficiency && (
+                      <span className="text-slate-500">{language.proficiency}</span>
+                    )}
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           </aside>
 
-          {/* Right Main Content (Experience) */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white p-8 rounded-xl shadow-md min-h-[500px]">
-              <div className="flex items-center justify-between mb-8 border-b pb-4">
-                <h2 className="text-2xl font-bold flex items-center text-slate-900">
-                  <Briefcase className="w-7 h-7 mr-3 text-blue-600" /> Work Experience
-                </h2>
+          <div className="space-y-6 lg:col-span-2">
+            <section className="rounded-xl bg-white p-8 shadow-md">
+              <h2 className="mb-4 text-2xl font-bold text-slate-900">About</h2>
+              <p className="leading-relaxed text-slate-700">{personalInfo.summary}</p>
+              <p className="mt-4 text-sm text-slate-500">
+                <span className="font-semibold text-slate-700">Specialties: </span>
+                {personalInfo.specialties}
+              </p>
+            </section>
+
+            <section className="min-h-[500px] rounded-xl bg-white p-8 shadow-md">
+              <div className="mb-8 flex items-center border-b pb-4">
+                <Briefcase className="mr-3 h-7 w-7 text-blue-600" />
+                <h2 className="text-2xl font-bold text-slate-900">Experience</h2>
               </div>
 
-              <div className="relative border-l-2 border-slate-200 ml-3 space-y-12">
+              <div className="relative ml-3 space-y-10 border-l-2 border-slate-200">
                 {experience.map((job) => (
-                  <div
+                  <article
                     key={`${job.company}:${job.role}:${job.period}`}
-                    className="pl-8 relative group"
+                    className="group relative pl-8"
                   >
-                    {/* Timeline Dot */}
-                    <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-4 border-slate-300 group-hover:border-blue-500 transition-colors"></div>
-
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-2">
-                      <h3 className="text-xl font-bold text-slate-800">{job.role}</h3>
-                      <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full mt-2 sm:mt-0 w-fit">
+                    <div className="absolute -left-[9px] top-1.5 h-4 w-4 rounded-full border-4 border-slate-300 bg-white transition-colors group-hover:border-blue-500" />
+                    <div className="mb-2 flex flex-col sm:flex-row sm:items-baseline sm:justify-between">
+                      <h3 className="text-lg font-bold text-slate-800">{job.role}</h3>
+                      <span className="mt-2 w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 sm:mt-0">
                         {job.period}
                       </span>
                     </div>
-
-                    <h4 className="text-lg text-slate-600 font-medium mb-3">{job.company}</h4>
-
-                    <p className="text-slate-600 mb-4 leading-relaxed">{job.description}</p>
-
+                    <h4 className="mb-1 text-base font-medium text-slate-600">{job.company}</h4>
+                    {(job.employment || job.location) && (
+                      <p className="mb-3 text-xs text-slate-400">
+                        {[job.employment, job.location].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                    <p className="leading-relaxed text-slate-600">{job.description}</p>
                     {job.achievements && (
-                      <ul className="space-y-2 mt-3">
+                      <ul className="mt-3 space-y-2">
                         {job.achievements.map((item) => (
                           <li
-                            key={`${job.company}:${job.role}:${job.period}:${item}`}
-                            className="flex items-start text-slate-600 text-sm"
+                            key={`${job.company}:${item}`}
+                            className="flex items-start text-sm text-slate-600"
                           >
-                            <span className="mr-2 mt-1.5 w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></span>
+                            <span className="mr-2 mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-400" />
                             <span>{item}</span>
                           </li>
                         ))}
                       </ul>
                     )}
-                  </div>
+                  </article>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Footer Quote / Additional */}
-            <div className="bg-slate-900 text-slate-300 p-8 rounded-xl text-center italic">
-              "I have a big passion for mathematics and low-level system designs. I have a logical
-              and methodical approach to achieving tasks and objectives."
-            </div>
+            <section className="rounded-xl bg-white p-8 shadow-md">
+              <h2 className="mb-6 flex items-center border-b pb-4 text-2xl font-bold text-slate-900">
+                <Award className="mr-3 h-7 w-7 text-blue-600" /> Licenses &amp; certifications
+              </h2>
+              <div className="grid gap-5 sm:grid-cols-2">
+                {certifications.map((item) => (
+                  <article key={`${item.name}:${item.issuer}`} className="rounded-lg bg-slate-50 p-4">
+                    <h3 className="font-bold text-slate-800">{item.name}</h3>
+                    <p className="mt-1 text-sm text-slate-600">{item.issuer}</p>
+                    <p className="mt-1 text-xs text-slate-500">Issued {item.issued}</p>
+                    {item.details && <p className="mt-2 text-xs leading-relaxed text-slate-500">{item.details}</p>}
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-xl bg-white p-8 shadow-md">
+              <h2 className="mb-6 flex items-center border-b pb-4 text-2xl font-bold text-slate-900">
+                <FolderOpen className="mr-3 h-7 w-7 text-blue-600" /> Projects
+              </h2>
+              <div className="space-y-5">
+                {projects.map((project) => (
+                  <article key={project.name}>
+                    <h3 className="font-bold text-slate-800">{project.name}</h3>
+                    <p className="mb-1 text-xs text-slate-400">Associated with {project.company}</p>
+                    <p className="text-sm leading-relaxed text-slate-600">{project.description}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="flex items-start rounded-xl bg-slate-900 p-6 text-slate-300 shadow-md">
+              <Star className="mr-3 mt-0.5 h-5 w-5 flex-shrink-0 text-blue-400" />
+              <div>
+                <h2 className="font-bold text-white">Featured</h2>
+                <p className="mt-1 font-medium">{featured.name}</p>
+                <p className="mt-1 text-sm">{featured.description}</p>
+              </div>
+            </section>
           </div>
         </div>
       </main>
