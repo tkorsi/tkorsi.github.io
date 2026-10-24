@@ -25,6 +25,7 @@ import {
   projects,
   skills,
 } from './data/resume'
+import GitHubActivity from './components/GitHubActivity'
 
 const cvPdfUrl = `${import.meta.env.BASE_URL}Yehor_Shapanov_Tech_Lead_CV.pdf`
 
@@ -71,6 +72,7 @@ export default function App() {
       </header>
 
       <main className="relative z-10 mx-auto mb-16 mt-8 max-w-6xl px-6 lg:px-12">
+        <GitHubActivity />
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <aside className="space-y-6">
             <section className="rounded-xl bg-white p-6 shadow-md">
@@ -230,11 +232,16 @@ export default function App() {
               </h2>
               <div className="grid gap-5 sm:grid-cols-2">
                 {certifications.map((item) => (
-                  <article key={`${item.name}:${item.issuer}`} className="rounded-lg bg-slate-50 p-4">
+                  <article
+                    key={`${item.name}:${item.issuer}`}
+                    className="rounded-lg bg-slate-50 p-4"
+                  >
                     <h3 className="font-bold text-slate-800">{item.name}</h3>
                     <p className="mt-1 text-sm text-slate-600">{item.issuer}</p>
                     <p className="mt-1 text-xs text-slate-500">Issued {item.issued}</p>
-                    {item.details && <p className="mt-2 text-xs leading-relaxed text-slate-500">{item.details}</p>}
+                    {item.details && (
+                      <p className="mt-2 text-xs leading-relaxed text-slate-500">{item.details}</p>
+                    )}
                   </article>
                 ))}
               </div>

@@ -298,7 +298,8 @@ export const certifications = [
     name: 'Probability theory',
     issuer: 'Computer Science Center',
     issued: 'Mar 2024',
-    details: 'Skills: Probability Theory, Probability. “It was an insanely hard course on Probability Theory!”',
+    details:
+      'Skills: Probability Theory, Probability. “It was an insanely hard course on Probability Theory!”',
   },
   {
     name: 'UC San Diego "Combinatorics and Probability"',
@@ -340,5 +341,6 @@ export const projects = [
 
 export const featured = {
   name: 'Functional programming',
-  description: 'Statement of accomplishment of Functional programming course on Coursera. With distinction.',
+  description:
+    'Statement of accomplishment of Functional programming course on Coursera. With distinction.',
 }
