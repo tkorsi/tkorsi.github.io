@@ -32,47 +32,43 @@ const cvPdfUrl = `${import.meta.env.BASE_URL}Yehor_Shapanov_Tech_Lead_CV.pdf`
 export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      <header className="bg-slate-900 px-6 pb-12 pt-16 text-white shadow-xl lg:px-24">
-        <div className="mx-auto max-w-6xl space-y-5">
-          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-3">
-              <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{personalInfo.name}</h1>
-              <p className="text-xl font-medium text-blue-400 md:text-2xl">{personalInfo.role}</p>
-              <span className="flex items-center text-slate-300">
-                <MapPin className="mr-2 h-4 w-4" /> {personalInfo.location}
-              </span>
-            </div>
-            <a
-              href={personalInfo.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-fit items-center rounded-lg border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-100 transition-colors hover:border-blue-400 hover:text-white"
+      <header className="site-hero bg-slate-900 px-6 py-12 text-white lg:px-24 lg:py-16">
+        <div className="site-hero-grid mx-auto max-w-6xl">
+          <div className="site-hero-intro">
+            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{personalInfo.name}</h1>
+            <p className="site-hero-role mt-4 max-w-xl text-xl font-medium leading-relaxed text-blue-400">
+              {personalInfo.role}
+            </p>
+            <p className="mt-5 flex items-center text-sm text-slate-300">
+              <MapPin className="mr-2 h-4 w-4" aria-hidden="true" /> {personalInfo.location}
+            </p>
+            <nav
+              aria-label="Contact and profiles"
+              className="site-hero-contact mt-6 text-sm text-slate-300"
             >
-              <Linkedin className="mr-2 h-4 w-4" /> LinkedIn profile
-            </a>
+              <a href={`mailto:${personalInfo.email}`}>
+                <Mail className="h-4 w-4" aria-hidden="true" /> {personalInfo.email}
+              </a>
+              <a href={`tel:${personalInfo.phone}`}>
+                <Phone className="h-4 w-4" aria-hidden="true" /> {personalInfo.phone}
+              </a>
+              <a
+                href={`https://github.com/${personalInfo.github}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="h-4 w-4" aria-hidden="true" /> {personalInfo.github}
+              </a>
+              <a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer">
+                <Linkedin className="h-4 w-4" aria-hidden="true" /> LinkedIn profile
+              </a>
+            </nav>
           </div>
-
-          <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-slate-700 pt-5 text-sm text-slate-300">
-            <a href={`mailto:${personalInfo.email}`} className="flex items-center hover:text-white">
-              <Mail className="mr-2 h-4 w-4" /> {personalInfo.email}
-            </a>
-            <a href={`tel:${personalInfo.phone}`} className="flex items-center hover:text-white">
-              <Phone className="mr-2 h-4 w-4" /> {personalInfo.phone}
-            </a>
-            <a
-              href={`https://github.com/${personalInfo.github}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center hover:text-white"
-            >
-              <Github className="mr-2 h-4 w-4" /> {personalInfo.github}
-            </a>
-          </div>
+          <GitHubActivity />
         </div>
       </header>
 
       <main className="relative z-10 mx-auto mb-16 mt-8 max-w-6xl px-6 lg:px-12">
-        <GitHubActivity />
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <aside className="space-y-6">
             <section className="rounded-xl bg-white p-6 shadow-md">

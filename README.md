@@ -4,7 +4,7 @@ Tech stack: React, TypeScript, Vite, Tailwind CSS. Tooling: ESLint, Prettier, Gi
 
 ## GitHub activity
 
-The Code & research section reads the public profile of `tkorsi` and three selected
+The compact header activity display reads the public profile of `tkorsi` and three selected
 public, personally owned repositories. It refreshes on page load and every 15 minutes
 while the tab is visible; visitors can also refresh manually. No token, account, or
 additional access is required.
@@ -25,7 +25,8 @@ seven-day browser cache, and a bundled dated snapshot keep the section useful du
 outages or GitHub rate limits. Saved data is explicitly labeled, and links to GitHub
 remain available. The cache is optional: disabled browser storage does not break the section.
 The calendar scrolls horizontally on small screens, starting with recent weeks, and
-offers a keyboard-accessible table of every daily count.
+offers a keyboard-accessible table of every daily count. The Details & daily counts
+disclosure also includes source information, repository descriptions, and manual refresh.
 
 Run `npm run refresh:github` to refresh the bundled fallback using public endpoints.
 This is only a fallback maintenance command; the page continues to refresh live without it.
