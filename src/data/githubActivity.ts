@@ -2,7 +2,9 @@ import snapshot from './githubActivitySnapshot.json' with { type: 'json' }
 
 export const PROFILE_URL = 'https://github.com/tkorsi'
 export const CONTRIBUTIONS_URL = 'https://github-contributions-api.jogruber.de/v4/tkorsi?y=last'
-export const REPOSITORY_NAMES = ['heroes-rl', 'hybridrag', 'Machine-Learning-Seminars'] as const
+// One public API page: newest 100 owned repositories, then the three eligible projects.
+export const REPOSITORIES_URL =
+  'https://api.github.com/users/tkorsi/repos?type=owner&sort=pushed&direction=desc&per_page=100'
 
 export type ContributionDay = { date: string; count: number; level: number }
 export type ContributionData = {
@@ -28,7 +30,10 @@ export type SourceState<T> = {
 const DAY_MS = 86_400_000
 const CACHE_TTL = 7 * DAY_MS
 const CACHE_PREFIX = 'tkorsi-public-activity-v1:'
-const UNAVAILABLE_REPOSITORIES_KEY = CACHE_PREFIX + 'unavailable-repositories'
+const REPOSITORIES_CACHE_KEY = CACHE_PREFIX + 'repositories-auto-v2'
+const LEGACY_EXCLUSIONS_KEY = CACHE_PREFIX + 'unavailable-repositories'
+type RepositorySelection = { data: Repository[]; fetchedAt: string; selectionCheckedAt: string }
+let repositorySelection: RepositorySelection | null = null
 const TIMEOUT_MS = 10_000
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -82,62 +87,37 @@ function parseCalendarCache(value: unknown): ContributionData {
   return parseContributions({ contributions: value.days })
 }
 
-function knownRepository(name: string): boolean {
-  return REPOSITORY_NAMES.some((item) => item === name)
-}
-
-function unavailableRepositories(): Set<string> {
-  try {
-    const raw = globalThis.localStorage.getItem(UNAVAILABLE_REPOSITORIES_KEY)
-    if (raw && raw.length < 1000) {
-      const value: unknown = JSON.parse(raw)
-      if (Array.isArray(value)) {
-        const names: unknown[] = value
-        return new Set(
-          names.filter((name): name is string => typeof name === 'string' && knownRepository(name)),
-        )
-      }
-    }
-  } catch {
-    // Storage may be disabled; the active request still excludes unavailable repositories.
-  }
-  return new Set()
-}
-
-function rememberRepositoryAvailability(name: string, available: boolean): void {
-  if (!knownRepository(name)) return
-  const unavailable = unavailableRepositories()
-  if (available) unavailable.delete(name)
-  else unavailable.add(name)
-  try {
-    // Unlike activity data, exclusions must survive cache expiry and old bundled snapshots.
-    globalThis.localStorage.setItem(UNAVAILABLE_REPOSITORIES_KEY, JSON.stringify([...unavailable]))
-  } catch {
-    // Local storage is an optional enhancement, never a requirement for live data.
-  }
+function safeRepositoryName(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[A-Za-z0-9._-]{1,100}$/.test(value) &&
+    value !== '.' &&
+    value !== '..' &&
+    value.toLowerCase() !== 'tkorsi.github.io'
+  )
 }
 
 function parseSavedRepositories(value: unknown): Repository[] {
-  if (!Array.isArray(value) || value.length > REPOSITORY_NAMES.length) {
-    throw new Error('Invalid saved repositories.')
-  }
+  if (!Array.isArray(value) || value.length > 3) throw new Error('Invalid saved repositories.')
   const values: unknown[] = value
   const seen = new Set<string>()
   return values.map((repo): Repository => {
     if (
       !record(repo) ||
-      typeof repo.name !== 'string' ||
-      !knownRepository(repo.name) ||
-      seen.has(repo.name) ||
+      !safeRepositoryName(repo.name) ||
+      seen.has(repo.name.toLowerCase()) ||
       repo.url !== `${PROFILE_URL}/${repo.name}` ||
       typeof repo.description !== 'string' ||
       repo.description.length > 1000 ||
-      !(repo.language === null || typeof repo.language === 'string') ||
+      !(
+        repo.language === null ||
+        (typeof repo.language === 'string' && repo.language.length <= 100)
+      ) ||
       !validTime(repo.pushedAt)
     ) {
       throw new Error('Invalid saved repository metadata.')
     }
-    seen.add(repo.name)
+    seen.add(repo.name.toLowerCase())
     return {
       name: repo.name,
       url: repo.url,
@@ -148,16 +128,31 @@ function parseSavedRepositories(value: unknown): Repository[] {
   })
 }
 
-/** A fixed allowlist and public-only responses keep private or unrelated names out of the page. */
-export function parsePublicRepository(value: unknown, expectedName: string): Repository | null {
-  if (!record(value)) throw new Error('Repository metadata is unavailable.')
+/** Normalize only eligible public personal projects; never persist raw API responses. */
+export function parsePublicRepository(value: unknown): Repository | null {
+  if (
+    !record(value) ||
+    typeof value.name !== 'string' ||
+    !record(value.owner) ||
+    typeof value.owner.login !== 'string' ||
+    typeof value.private !== 'boolean' ||
+    typeof value.fork !== 'boolean' ||
+    typeof value.archived !== 'boolean' ||
+    typeof value.disabled !== 'boolean' ||
+    typeof value.size !== 'number' ||
+    !Number.isSafeInteger(value.size) ||
+    value.size < 0
+  ) {
+    throw new Error('Repository metadata could not be verified.')
+  }
   if (
     value.private !== false ||
-    value.fork !== false ||
-    !record(value.owner) ||
     value.owner.login !== 'tkorsi' ||
-    value.name !== expectedName ||
-    !knownRepository(expectedName)
+    value.fork ||
+    value.archived ||
+    value.disabled ||
+    value.pushed_at === null ||
+    value.name.toLowerCase() === 'tkorsi.github.io'
   ) {
     return null
   }
@@ -170,6 +165,77 @@ export function parsePublicRepository(value: unknown, expectedName: string): Rep
       pushedAt: value.pushed_at,
     },
   ])[0]
+}
+
+/** GitHub can report size:0 shortly after a first push; commits establish actual content. */
+async function hasPublicCommit(name: string, signal?: AbortSignal): Promise<boolean> {
+  const response = await request(
+    `https://api.github.com/repos/tkorsi/${name}/commits?per_page=1`,
+    signal,
+  )
+  if (response.status === 404 || response.status === 409) return false
+  if (!response.ok || !Array.isArray(response.value) || response.value.length > 1) {
+    throw new Error('Repository contents could not be verified.')
+  }
+  const values: unknown[] = response.value
+  if (values.length === 0) return false
+  const commit = values[0]
+  if (!record(commit) || typeof commit.sha !== 'string' || !/^[a-f0-9]{40}$/i.test(commit.sha)) {
+    throw new Error('Repository contents could not be verified.')
+  }
+  return true
+}
+
+type RepositoryCandidate = { repo: Repository; needsCommitCheck: boolean }
+
+function publicCandidates(value: unknown): RepositoryCandidate[] {
+  if (!Array.isArray(value) || value.length > 100) {
+    throw new Error('The public repository list could not be verified.')
+  }
+  const values: unknown[] = value
+  const candidates = values.flatMap((item) => {
+    const repo = parsePublicRepository(item)
+    return repo && record(item) ? [{ repo, needsCommitCheck: item.size === 0 }] : []
+  })
+  return candidates.sort((a, b) => {
+    const byPush = Date.parse(b.repo.pushedAt) - Date.parse(a.repo.pushedAt)
+    if (byPush) return byPush
+    return a.repo.name < b.repo.name ? -1 : a.repo.name > b.repo.name ? 1 : 0
+  })
+}
+
+async function selectCandidates(
+  candidates: RepositoryCandidate[],
+  options: { signal?: AbortSignal } = {},
+  onUnavailable?: (name: string) => void,
+): Promise<Repository[]> {
+  const seen = new Set<string>()
+  const selected: Repository[] = []
+  let probes = 0
+  for (const { repo, needsCommitCheck } of candidates) {
+    const name = repo.name.toLowerCase()
+    if (seen.has(name)) continue
+    seen.add(name)
+    if (needsCommitCheck) {
+      if (probes >= 5) continue
+      probes++
+      if (!(await hasPublicCommit(repo.name, options.signal))) {
+        onUnavailable?.(name)
+        continue
+      }
+    }
+    selected.push(repo)
+    if (selected.length === 3) break
+  }
+  return selected
+}
+
+/** Scan only the newest 100 public repos; probe at most five zero-size candidates per refresh. */
+export async function selectPublicRepositories(
+  value: unknown,
+  options: { signal?: AbortSignal } = {},
+): Promise<Repository[]> {
+  return selectCandidates(publicCandidates(value), options)
 }
 
 function initial<T>(
@@ -217,9 +283,88 @@ export function initialContributions(): SourceState<ContributionData> {
 }
 
 export function initialRepositories(): SourceState<Repository[]> {
-  const state = initial('repositories', snapshot.repositories, parseSavedRepositories)
-  const unavailable = unavailableRepositories()
-  return { ...state, data: state.data?.filter((repo) => !unavailable.has(repo.name)) ?? null }
+  let latest = repositorySelection
+  try {
+    const raw = globalThis.localStorage.getItem(REPOSITORIES_CACHE_KEY)
+    if (raw && raw.length < 10_000) {
+      const cached: unknown = JSON.parse(raw)
+      if (record(cached) && validTime(cached.fetchedAt)) {
+        const selectionCheckedAt = cached.selectionCheckedAt ?? cached.fetchedAt
+        if (
+          validTime(selectionCheckedAt) &&
+          Date.parse(cached.fetchedAt) <= Date.parse(selectionCheckedAt) &&
+          Date.parse(selectionCheckedAt) <= Date.now() &&
+          (!latest || Date.parse(selectionCheckedAt) > Date.parse(latest.selectionCheckedAt))
+        ) {
+          latest = {
+            data: parseSavedRepositories(cached.data),
+            fetchedAt: cached.fetchedAt,
+            selectionCheckedAt,
+          }
+        }
+      }
+    }
+  } catch {
+    // Storage may be blocked or malformed. In-memory verified data remains usable.
+  }
+  if (
+    latest &&
+    Date.parse(latest.selectionCheckedAt) >= Date.parse(snapshot.repositories.fetchedAt)
+  ) {
+    // A newer successful selection, including [], supersedes all older bundled names.
+    // Keep this bounded record after its display TTL so old names cannot reappear.
+    repositorySelection = latest
+    if (Date.now() - Date.parse(latest.fetchedAt) >= CACHE_TTL) {
+      return { data: null, fetchedAt: latest.fetchedAt, status: 'unavailable', error: null }
+    }
+    return { data: latest.data, fetchedAt: latest.fetchedAt, status: 'cached', error: null }
+  }
+  try {
+    let data = parseSavedRepositories(snapshot.repositories.data)
+    // Preserve removals learned by the previous fixed-project version until a fresh list arrives.
+    try {
+      const raw = globalThis.localStorage.getItem(LEGACY_EXCLUSIONS_KEY)
+      if (raw && raw.length < 1000) {
+        const old: unknown = JSON.parse(raw)
+        if (Array.isArray(old)) {
+          const names: unknown[] = old
+          const excluded = new Set(names.filter(safeRepositoryName))
+          data = data.filter((repo) => !excluded.has(repo.name))
+        }
+      }
+    } catch {
+      // A restricted storage environment can still show the public bundled snapshot.
+    }
+    return { data, fetchedAt: snapshot.repositories.fetchedAt, status: 'snapshot', error: null }
+  } catch {
+    return { data: null, fetchedAt: null, status: 'unavailable', error: null }
+  }
+}
+
+function saveRepositorySelection(selection: RepositorySelection): void {
+  repositorySelection = selection
+  try {
+    globalThis.localStorage.setItem(REPOSITORIES_CACHE_KEY, JSON.stringify(selection))
+  } catch {
+    // Retain the verified selection in memory even if storage is disabled.
+  }
+}
+
+function retainObservedRepositories(eligibleNames: Set<string>): void {
+  const fallback = initialRepositories()
+  // Keep the bounded durable record even when its metadata is too old to display.
+  const previous =
+    fallback.data !== null && fallback.fetchedAt
+      ? { data: fallback.data, fetchedAt: fallback.fetchedAt }
+      : repositorySelection
+  if (!previous) return
+  const data = previous.data.filter((repo) => eligibleNames.has(repo.name.toLowerCase()))
+  if (data.length === previous.data.length) return
+  saveRepositorySelection({
+    data,
+    fetchedAt: previous.fetchedAt,
+    selectionCheckedAt: new Date().toISOString(),
+  })
 }
 
 function save<T>(key: string, state: SourceState<T>): void {
@@ -281,49 +426,28 @@ export async function loadContributions(
 export async function loadRepositories(
   options: { signal?: AbortSignal } = {},
 ): Promise<SourceState<Repository[]>> {
-  const unavailable = new Set<string>()
   try {
-    // allSettled ensures a confirmed 404 is also excluded from a partial-error fallback.
-    const results = await Promise.allSettled(
-      REPOSITORY_NAMES.map(async (name) => {
-        const response = await request(
-          `https://api.github.com/repos/tkorsi/${name}`,
-          options.signal,
-        )
-        if (response.status === 404 || response.status === 410) {
-          unavailable.add(name)
-          rememberRepositoryAvailability(name, false)
-          return null
-        }
-        if (!response.ok) throw new Error('Public repository refresh unavailable.')
-        const repository = parsePublicRepository(response.value, name)
-        if (!repository) unavailable.add(name)
-        rememberRepositoryAvailability(name, repository !== null)
-        return repository
-      }),
-    )
-    if (results.some((result) => result.status === 'rejected')) {
-      throw new Error('Public repository refresh unavailable.')
-    }
-    const data = results.flatMap((result) =>
-      result.status === 'fulfilled' && result.value ? [result.value] : [],
-    )
-    const state: SourceState<Repository[]> = {
-      data,
-      fetchedAt: new Date().toISOString(),
-      status: 'live',
-      error: null,
-    }
-    save('repositories', state)
-    return state
+    const response = await request(REPOSITORIES_URL, options.signal)
+    if (!response.ok) throw new Error('Public repository refresh unavailable.')
+    // Validate the entire list before learning omissions. Later probe failures must not revive them.
+    const candidates = publicCandidates(response.value)
+    const eligibleNames = new Set(candidates.map(({ repo }) => repo.name.toLowerCase()))
+    retainObservedRepositories(eligibleNames)
+    const data = await selectCandidates(candidates, options, (name) => {
+      eligibleNames.delete(name)
+      retainObservedRepositories(eligibleNames)
+    })
+    const fetchedAt = new Date().toISOString()
+    saveRepositorySelection({ data, fetchedAt, selectionCheckedAt: fetchedAt })
+    return { data, fetchedAt, status: 'live', error: null }
   } catch {
     const fallback = initialRepositories()
-    const state = {
+    return {
       ...fallback,
-      data: fallback.data?.filter((repo) => !unavailable.has(repo.name)) ?? null,
-      error: 'Live refresh unavailable. Showing saved repository details.',
+      error:
+        fallback.data === null
+          ? 'Live refresh unavailable. Visit GitHub for current projects.'
+          : 'Live refresh unavailable. Showing saved repository details.',
     }
-    if (unavailable.size > 0) save('repositories', state)
-    return state
   }
 }

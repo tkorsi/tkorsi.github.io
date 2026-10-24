@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import {
   CONTRIBUTIONS_URL,
-  REPOSITORY_NAMES,
+  REPOSITORIES_URL,
   parseContributions,
-  parsePublicRepository,
+  selectPublicRepositories,
 } from '../src/data/githubActivity.ts'
 
 async function publicJson(url) {
@@ -24,19 +24,10 @@ const calendar = {
   source: CONTRIBUTIONS_URL,
   data: parseContributions(await publicJson(CONTRIBUTIONS_URL)),
 }
-const data = await Promise.all(
-  REPOSITORY_NAMES.map(async (name) => {
-    const repo = parsePublicRepository(
-      await publicJson(`https://api.github.com/repos/tkorsi/${name}`),
-      name,
-    )
-    if (!repo) throw new Error(`${name} is no longer a verified public personal repository.`)
-    return repo
-  }),
-)
+const data = await selectPublicRepositories(await publicJson(REPOSITORIES_URL))
 const repositories = {
   fetchedAt: new Date().toISOString(),
-  source: 'https://api.github.com/repos/tkorsi/',
+  source: REPOSITORIES_URL,
   data,
 }
 const path = fileURLToPath(new URL('../src/data/githubActivitySnapshot.json', import.meta.url))

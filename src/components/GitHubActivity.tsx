@@ -191,7 +191,7 @@ export default function GitHubActivity() {
         </div>
       </div>
 
-      <nav className="activity-repos" aria-label="Selected public code and research">
+      <nav className="activity-repos" aria-label="Recently updated public repositories">
         <span className="activity-repos-label">Public work</span>
         {repositories.data?.map((repo) => (
           <a
@@ -206,7 +206,7 @@ export default function GitHubActivity() {
             <ArrowUpRight size={12} aria-hidden="true" />
           </a>
         ))}
-        {repositories.data?.length === 0 && <span>No selected public repositories available.</span>}
+        {repositories.data?.length === 0 && <span>No eligible public repositories available.</span>}
         {!repositories.data && (
           <span>{loading ? 'Loading repositories…' : 'Repository details unavailable.'}</span>
         )}
@@ -226,6 +226,12 @@ export default function GitHubActivity() {
           <p>
             Refreshes on visit and every 15 minutes while visible. The calendar source may be cached
             for up to an hour. The timestamp above is when this page checked the data.
+          </p>
+          <p>
+            Public work automatically shows up to three recently pushed repositories owned by
+            tkorsi. Forks, archived or empty repositories, and this website are excluded. The
+            selection comes from the 100 most recently pushed public repositories; it does not
+            classify projects as research or publications.
           </p>
           {repositories.fetchedAt && (
             <p>

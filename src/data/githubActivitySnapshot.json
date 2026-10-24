@@ -1,7 +1,7 @@
 {
   "version": 1,
   "calendar": {
-    "fetchedAt": "2026-10-24T02:19:56.950Z",
+    "fetchedAt": "2026-10-24T02:51:34.612Z",
     "source": "https://github-contributions-api.jogruber.de/v4/tkorsi?y=last",
     "data": {
       "days": [
@@ -1867,15 +1867,15 @@
     }
   },
   "repositories": {
-    "fetchedAt": "2026-10-24T02:19:57.587Z",
-    "source": "https://api.github.com/repos/tkorsi/",
+    "fetchedAt": "2026-10-24T02:51:36.088Z",
+    "source": "https://api.github.com/users/tkorsi/repos?type=owner&sort=pushed&direction=desc&per_page=100",
     "data": [
       {
         "name": "heroes-rl",
         "url": "https://github.com/tkorsi/heroes-rl",
         "description": "Heroes III reinforcement learning experiments with VCMI, external agents, and synchronized fog-of-war recordings.",
         "language": "Python",
-        "pushedAt": "2026-10-24T02:19:44Z"
+        "pushedAt": "2026-10-24T02:48:57Z"
       },
       {
         "name": "hybridrag",
@@ -1885,11 +1885,11 @@
         "pushedAt": "2025-12-12T19:40:16Z"
       },
       {
-        "name": "Machine-Learning-Seminars",
-        "url": "https://github.com/tkorsi/Machine-Learning-Seminars",
-        "description": "Seminars on ML ",
-        "language": "Jupyter Notebook",
-        "pushedAt": "2025-04-06T11:42:32Z"
+        "name": "video-galery",
+        "url": "https://github.com/tkorsi/video-galery",
+        "description": "Video galery for personal drones projects",
+        "language": "JavaScript",
+        "pushedAt": "2025-05-20T21:40:48Z"
       }
     ]
   }
