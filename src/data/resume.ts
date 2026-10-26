@@ -65,7 +65,7 @@ export const personalInfo = {
   summary:
     'Everything I want to do in life was perfectly expressed by Scott McNealy when he was actually eulogizing Sun: "Kick butt, have fun, don\'t cheat, love my customers and change computing forever!"',
   specialties:
-    'Golang, high-load high-performance services, kernel programming, application architecture',
+    'LLM inference engineering, GPU model serving and optimization, high-performance AI infrastructure, production systems architecture',
 } satisfies PersonalInfo
 
 export const highlights = []
